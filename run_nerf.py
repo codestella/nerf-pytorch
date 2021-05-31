@@ -174,6 +174,102 @@ def render_path(render_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=N
 
     return rgbs, disps
 
+def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
+
+    H, W, focal = hwf
+    target_imgs = gt_imgs
+
+    if render_factor!=0:
+        # Render downsampled for speed
+        H = H//render_factor
+        W = W//render_factor
+        focal = focal/render_factor
+
+    rgbs = []
+    disps = []
+
+    #pose dim (b, 3, 4)
+    #c2w: array of shape [3, 4]. Camera-to-world transformation matrix.
+
+    t = time.time()
+    epoch = 1000
+    lrate_decay = 0.1
+    lrate = 0.001
+    th = torch.tensor(np.pi/6, requires_grad=True)
+    w = torch.tensor([[1], [0], [0]], dtype=torch.float32, requires_grad=True)
+    mu = torch.tensor([[0], [0], [0]], dtype=torch.float32, requires_grad=True)
+
+    #T_now = torch.eye(4)
+    inerf_optimizer = torch.optim.Adam(params=[th, w, mu], lr=lrate, betas=(0.9, 0.999))
+
+    for i, c2w in enumerate(tqdm(gt_poses)):
+        print(i, time.time() - t)
+        t = time.time()
+        gt_pose = c2w[:3,:4]
+        # T_now = torch.eye(4)
+        pose_now = torch.zeros_like(gt_pose)
+        inerf_optimizer.zero_grad()
+        for k in range(epoch):
+            rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
+            img_loss = img2mse(rgb, target_imgs[i])
+            psnr = mse2psnr(img_loss)
+            print("inerf : " + k + " : img_loss : ", img_loss)
+            print("inerf : " + k + " : psnr : ", psnr)
+            pose_error = np.linalg.norm(gt_pose - pose_now)
+            print("inerf : " + k + " : pose error : ", pose_error)
+
+            if  pose_error< 1 :
+                rgbs.append(rgb.cpu().numpy())
+                disps.append(disp.cpu().numpy())
+                break
+
+            trans = extras['raw'][..., -1]
+            loss = img_loss
+
+            if 'rgb0' in extras:
+                img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
+                loss = loss + img_loss0
+                psnr0 = mse2psnr(img_loss0)
+
+            loss.backward()
+            inerf_optimizer.step()
+
+            # NOTE: IMPORTANT!
+            ###   update learning rate   ###
+            decay_rate = 0.1
+            decay_steps = lrate_decay * 1000
+            new_lrate = lrate * (decay_rate ** (k/decay_steps))
+            for param_group in inerf_optimizer.param_groups:
+                param_group['lr'] = new_lrate
+
+            w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
+            K = torch.matmul(
+                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
+            E = torch.exp(w_skew * th)
+            T = torch.hstack((E, K))
+            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
+            pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
+            pose_now = torch.matmul(T_now, pose_mat)[:4, :]
+
+        if i==0:
+            print(rgb.shape, disp.shape)
+
+        """
+        if gt_imgs is not None and render_factor==0:
+            p = -10. * np.log10(np.mean(np.square(rgb.cpu().numpy() - gt_imgs[i])))
+            print(p)
+        """
+
+        if savedir is not None:
+            rgb8 = to8b(rgbs[-1])
+            filename = os.path.join(savedir, '{:03d}.png'.format(i))
+            imageio.imwrite(filename, rgb8)
+
+
+    rgbs = np.stack(rgbs, 0)
+    disps = np.stack(disps, 0)
+
+    return rgbs, disps
 
 def create_nerf(args):
     """Instantiate NeRF's MLP model.
@@ -424,11 +520,11 @@ def config_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, 
                         help='config file path')
-    parser.add_argument("--expname", type=str, 
+    parser.add_argument("--expname", type=str, default='fern_test',
                         help='experiment name')
     parser.add_argument("--basedir", type=str, default='./logs/', 
                         help='where to store ckpts and logs')
-    parser.add_argument("--datadir", type=str, default='./data/llff/fern', 
+    parser.add_argument("--datadir", type=str, default="./data/nerf_llff_data/fern",
                         help='input data directory')
 
     # training options
@@ -440,7 +536,7 @@ def config_parser():
                         help='layers in fine network')
     parser.add_argument("--netwidth_fine", type=int, default=256, 
                         help='channels per layer in fine network')
-    parser.add_argument("--N_rand", type=int, default=32*32*4, 
+    parser.add_argument("--N_rand", type=int, default=1024,
                         help='batch size (number of random rays per gradient step)')
     parser.add_argument("--lrate", type=float, default=5e-4, 
                         help='learning rate')
@@ -460,11 +556,11 @@ def config_parser():
     # rendering options
     parser.add_argument("--N_samples", type=int, default=64, 
                         help='number of coarse samples per ray')
-    parser.add_argument("--N_importance", type=int, default=0,
+    parser.add_argument("--N_importance", type=int, default=64,
                         help='number of additional fine samples per ray')
     parser.add_argument("--perturb", type=float, default=1.,
                         help='set to 0. for no jitter, 1. for jitter')
-    parser.add_argument("--use_viewdirs", action='store_true', 
+    parser.add_argument("--use_viewdirs", action='store_true', default=True,
                         help='use full 5D input instead of 3D')
     parser.add_argument("--i_embed", type=int, default=0, 
                         help='set 0 for default positional encoding, -1 for none')
@@ -472,12 +568,12 @@ def config_parser():
                         help='log2 of max freq for positional encoding (3D location)')
     parser.add_argument("--multires_views", type=int, default=4, 
                         help='log2 of max freq for positional encoding (2D direction)')
-    parser.add_argument("--raw_noise_std", type=float, default=0., 
+    parser.add_argument("--raw_noise_std", type=float, default=1e0,
                         help='std dev of noise added to regularize sigma_a output, 1e0 recommended')
 
-    parser.add_argument("--render_only", action='store_true', 
+    parser.add_argument("--render_only", action='store_true', default=True,
                         help='do not optimize, reload weights and render out render_poses path')
-    parser.add_argument("--render_test", action='store_true', 
+    parser.add_argument("--render_test", action='store_true', default=True,
                         help='render the test set instead of render_poses path')
     parser.add_argument("--render_factor", type=int, default=0, 
                         help='downsampling factor to speed up rendering, set 4 or 8 for fast preview')
@@ -648,6 +744,7 @@ def train():
             print('test poses shape', render_poses.shape)
 
             rgbs, _ = render_path(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
+            #rgbs, disps = inerf(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
             print('Done rendering', testsavedir)
             imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
 
