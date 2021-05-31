@@ -206,7 +206,6 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         print(i, time.time() - t)
         t = time.time()
         gt_pose = c2w[:3,:4]
-        # T_now = torch.eye(4)
         pose_now = torch.zeros_like(gt_pose)
         inerf_optimizer.zero_grad()
         for k in range(epoch):
