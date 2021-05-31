@@ -177,7 +177,7 @@ def render_path(render_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=N
 def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
 
     H, W, focal = hwf
-    target_imgs = gt_imgs
+    target_imgs = torch.tensor(gt_imgs, dtype=torch.float32)
 
     if render_factor!=0:
         # Render downsampled for speed
