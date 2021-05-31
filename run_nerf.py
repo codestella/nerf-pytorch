@@ -214,7 +214,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             psnr = mse2psnr(img_loss)
             print("inerf : %d : img_loss : %f" % (k, img_loss))
             print("inerf : %d : psnr : %f " % (k, psnr))
-            pose_error = np.linalg.norm(gt_pose - pose_now)
+            pose_error = torch.norm(gt_pose - pose_now)
             print("inerf : %d : pose error : %f " % (k, pose_error))
 
             if  pose_error< 1 :
