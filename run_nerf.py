@@ -212,10 +212,10 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
             img_loss = img2mse(rgb, target_imgs[i])
             psnr = mse2psnr(img_loss)
-            print("inerf : " + k + " : img_loss : ", img_loss)
-            print("inerf : " + k + " : psnr : ", psnr)
+            print("inerf : %d : img_loss : %f" % (k, img_loss))
+            print("inerf : %d : psnr : %f " % (k, psnr))
             pose_error = np.linalg.norm(gt_pose - pose_now)
-            print("inerf : " + k + " : pose error : ", pose_error)
+            print("inerf : %d : pose error : %f " % (k, pose_error))
 
             if  pose_error< 1 :
                 rgbs.append(rgb.cpu().numpy())
