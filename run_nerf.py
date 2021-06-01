@@ -217,12 +217,12 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             th = torch.norm(w)
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
-                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
-            E = torch.exp(w_skew * th)
-            T = torch.hstack((E, K))
-            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            T_next = torch.matmul(T_now, pose_mat)
+                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu, required_grad = True)
+            E = torch.exp(w_skew * th, required_grad = True)
+            T = torch.hstack((E, K), required_grad = True)
+            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)), required_grad = True)
+            pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)), required_grad = True)
+            T_next = torch.matmul(T_now, pose_mat, required_grad = True)
             pose_next = T_next[:3, :]
             print(gt_pose)
             print(pose_next)
@@ -250,6 +250,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             print(w.grad)
             print(mu.grad)
             #losses.requires_grad = True
+            pose_next.requires_grad = True
             pose_next.backward()
             inerf_optimizer.step()
             print(w.grad)
