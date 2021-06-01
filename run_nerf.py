@@ -194,7 +194,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     t = time.time()
     epoch = 1000
     lrate_decay = 250
-    lrate = 1e-5
+    lrate = 1e-6
     #th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
     th = torch.tensor(torch.norm(w), dtype=torch.float32, requires_grad=True)
@@ -229,13 +229,13 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 rgbs.append(rgb.cpu().numpy())
                 disps.append(disp.cpu().numpy())
                 break
-            check1 = w.grad
-            check2 = mu.grad
+            print(w.grad)
+            print(mu.grad)
             loss.requires_grad = True
             loss.backward()
             inerf_optimizer.step()
-            check1 = w.grad
-            check2 = mu.grad
+            print(w.grad)
+            print(mu.grad)
 
             # NOTE: IMPORTANT!
             ###   update learning rate   ###
