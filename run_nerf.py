@@ -198,7 +198,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     #th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
     th = torch.tensor(torch.norm(w), dtype=torch.float32, requires_grad=True)
-    mu = torch.tensor(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
+    mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
 
     #T_now = torch.eye(4)
     inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
