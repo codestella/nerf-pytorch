@@ -222,10 +222,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 disps.append(disp.cpu().numpy())
                 break
 
-            #trans = extras['raw'][..., -1]
-            loss += img_loss
-            loss.requires_grad=True
             trans = extras['raw'][..., -1]
+            loss.requires_grad = True
             loss = img_loss
             psnr = mse2psnr(img_loss)
 
