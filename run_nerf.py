@@ -197,10 +197,10 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     lrate = 1e-6
     #th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
-    #w = torch.autograd.Variable(w, requires_grad=True)
+    w = torch.autograd.Variable(w, requires_grad=True)
 
     mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
-    #mu = torch.autograd.Variable(mu, requires_grad=True)
+    mu = torch.autograd.Variable(mu, requires_grad=True)
 
     #T_now = torch.eye(4)
     inerf_optimizer = torch.optim.Adam(params=[nn.Parameter(w), nn.Parameter(mu)], lr=lrate)
@@ -209,7 +209,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         t = time.time()
         gt_pose = c2w[:3,:4]
         pose_now = torch.empty_like(gt_pose)
-        #inerf_optimizer.zero_grad()
+        inerf_optimizer.zero_grad()
         for k in range(epoch):
             th = torch.norm(w)
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
