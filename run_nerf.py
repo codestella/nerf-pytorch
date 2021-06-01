@@ -248,8 +248,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             T = torch.hstack((E, K))
             T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            pose_now = torch.matmul(T_now, pose_mat)[:4, :]
-
+            pose_mat = torch.matmul(T_now, pose_mat)
+            pose_now = pose_mat[:4, :]
         if i==0:
             print(rgb.shape, disp.shape)
 
