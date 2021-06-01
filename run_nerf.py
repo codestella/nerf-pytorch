@@ -197,7 +197,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     lrate = 1e-5
     #th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.tensor([[1], [0], [0]], dtype=torch.float32, requires_grad=True)
-    th = torch.tensor(w.norm, requires_grad=True)
+    th = torch.tensor(w.norm, dtype=torch.float32, requires_grad=True)
     mu = torch.tensor([[0], [0], [0]], dtype=torch.float32, requires_grad=True)
 
     #T_now = torch.eye(4)
