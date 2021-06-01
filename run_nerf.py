@@ -201,7 +201,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
 
     #T_now = torch.eye(4)
-    inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
+    inerf_optimizer = torch.optim.Adam(params=[nn.Parameter(w), nn.Parameter(mu)], lr=lrate)
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
         t = time.time()
