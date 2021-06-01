@@ -202,7 +202,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
 
     #T_now = torch.eye(4)
     inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
-    loss = torch.zeros(1, dtype=torch.float32)
+    loss = nn.MSELoss()
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
         t = time.time()
@@ -211,7 +211,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         inerf_optimizer.zero_grad()
         for k in range(epoch):
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
-            img_loss = img2mse(rgb, target_imgs[i])
+            img_loss = nn.MSELoss(rgb, target_imgs[i])
             psnr = mse2psnr(img_loss)
             loss = img_loss
 
