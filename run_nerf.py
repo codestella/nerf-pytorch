@@ -213,13 +213,12 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             img_loss = img2mse(rgb, target_imgs[i])
             psnr = mse2psnr(img_loss)
             loss = img_loss
-            loss.requires_grad = True
 
             if 'rgb0' in extras:
                 img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
                 loss = loss + img_loss0
                 psnr0 = mse2psnr(img_loss0)
-                
+
             print("inerf : %d : img_loss : %f" % (k, img_loss))
             print("inerf : %d : psnr : %f " % (k, psnr))
             pose_error = torch.norm(gt_pose - pose_now)
@@ -229,7 +228,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 rgbs.append(rgb.cpu().numpy())
                 disps.append(disp.cpu().numpy())
                 break
-
+                
+            loss.requires_grad = True
             loss.backward()
             inerf_optimizer.step()
 
