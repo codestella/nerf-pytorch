@@ -249,8 +249,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 break
             print(w.grad)
             print(mu.grad)
-            losses.requires_grad = True
-            losses.backward()
+            #losses.requires_grad = True
+            pose_next.backward()
             inerf_optimizer.step()
             print(w.grad)
             print(mu.grad)
