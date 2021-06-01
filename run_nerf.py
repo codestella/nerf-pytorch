@@ -224,7 +224,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
 
             #trans = extras['raw'][..., -1]
             loss = img_loss
-
+            loss.requires_grad=True
             #if 'rgb0' in extras:
             #    img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
             #    loss = loss + img_loss0
