@@ -221,7 +221,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 rgbs.append(rgb.cpu().numpy())
                 disps.append(disp.cpu().numpy())
                 break
-            print(extras)
+            print(extras.keys())
             trans = extras['raw'][..., -1]
             loss.requires_grad = True
             loss = img_loss
