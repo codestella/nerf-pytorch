@@ -235,11 +235,11 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
 
             # NOTE: IMPORTANT!
             ###   update learning rate   ###
-            decay_rate = 0.1
-            decay_steps = lrate_decay * 1000
-            new_lrate = lrate * (decay_rate ** (k/decay_steps))
-            for param_group in inerf_optimizer.param_groups:
-                param_group['lr'] = new_lrate
+            #decay_rate = 0.1
+            #decay_steps = lrate_decay * 1000
+            #new_lrate = lrate * (decay_rate ** (k/decay_steps))
+            #for param_group in inerf_optimizer.param_groups:
+            #    param_group['lr'] = new_lrate
 
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
@@ -250,6 +250,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.matmul(T_now, pose_mat)
             pose_now = pose_mat[:3, :]
+            print(gt_pose)
             print(pose_now)
         if i==0:
             print(rgb.shape, disp.shape)
