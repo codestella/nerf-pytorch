@@ -193,8 +193,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
 
     t = time.time()
     epoch = 1000
-    lrate_decay = 0.1
-    lrate = 0.001
+    lrate_decay = 250
+    lrate = 5e-4
     th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.tensor([[1], [0], [0]], dtype=torch.float32, requires_grad=True)
     mu = torch.tensor([[0], [0], [0]], dtype=torch.float32, requires_grad=True)
