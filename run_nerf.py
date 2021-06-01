@@ -211,7 +211,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         inerf_optimizer.zero_grad()
         for k in range(epoch):
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
-            img_loss = loss(rgb, target_imgs[i])
+            tar = target_imgs[i]
+            img_loss = loss(rgb, tar)
             psnr = mse2psnr(img_loss)
             losses = img_loss
 
