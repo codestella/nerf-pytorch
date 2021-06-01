@@ -229,11 +229,14 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 rgbs.append(rgb.cpu().numpy())
                 disps.append(disp.cpu().numpy())
                 break
-
+            check1 = w.grad
+            check2 = mu.grad
             loss.requires_grad = True
             loss.backward()
             inerf_optimizer.step()
-
+            check1 = w.grad
+            check2 = mu.grad
+            
             # NOTE: IMPORTANT!
             ###   update learning rate   ###
             #decay_rate = 0.1
