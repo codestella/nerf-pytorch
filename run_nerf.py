@@ -196,9 +196,9 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     lrate_decay = 250
     lrate = 1e-5
     #th = torch.tensor(np.pi/6, requires_grad=True)
-    w = torch.tensor([[1], [0], [0]], dtype=torch.float32, requires_grad=True)
+    w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
     th = torch.tensor(torch.norm(w), dtype=torch.float32, requires_grad=True)
-    mu = torch.tensor([[0], [0], [0]], dtype=torch.float32, requires_grad=True)
+    mu = torch.tensor(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
 
     #T_now = torch.eye(4)
     inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
@@ -236,7 +236,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             inerf_optimizer.step()
             check1 = w.grad
             check2 = mu.grad
-            
+
             # NOTE: IMPORTANT!
             ###   update learning rate   ###
             #decay_rate = 0.1
