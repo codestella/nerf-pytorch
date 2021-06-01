@@ -196,14 +196,14 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     lrate_decay = 250
     lrate = 1e-6
     #th = torch.tensor(np.pi/6, requires_grad=True)
-    w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32)
-    w = torch.autograd.Variable(w, requires_grad=True)
-    th = torch.tensor(torch.norm(w), dtype=torch.float32, requires_grad=True)
+    w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
+    #w = torch.autograd.Variable(w, requires_grad=True)
+
     mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
-    mu = torch.autograd.Variable(mu, requires_grad=True)
+    #mu = torch.autograd.Variable(mu, requires_grad=True)
 
     #T_now = torch.eye(4)
-    #inerf_optimizer = torch.optim.Adam(params=[nn.Parameter(w), nn.Parameter(mu)], lr=lrate)
+    inerf_optimizer = torch.optim.Adam(params=[nn.Parameter(w), nn.Parameter(mu)], lr=lrate)
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
         t = time.time()
@@ -211,6 +211,19 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         pose_now = torch.empty_like(gt_pose)
         #inerf_optimizer.zero_grad()
         for k in range(epoch):
+            th = torch.norm(w)
+            w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
+            K = torch.matmul(
+                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
+            E = torch.exp(w_skew * th)
+            T = torch.hstack((E, K))
+            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
+            pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
+            pose_mat = torch.matmul(T_now, pose_mat)
+            pose_now = pose_mat[:3, :]
+            print(gt_pose)
+            print(pose_now)
+
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
             tar = target_imgs[i]
             img_loss = img2mse(rgb, tar)
@@ -235,7 +248,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             print(mu.grad)
             losses.requires_grad = True
             losses.backward()
-            #inerf_optimizer.step()
+            inerf_optimizer.step()
             print(w.grad)
             print(mu.grad)
 
@@ -246,18 +259,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             #new_lrate = lrate * (decay_rate ** (k/decay_steps))
             #for param_group in inerf_optimizer.param_groups:
             #    param_group['lr'] = new_lrate
-            th = torch.norm(w)
-            w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
-            K = torch.matmul(
-                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
-            E = torch.exp(w_skew * th)
-            T = torch.hstack((E, K))
-            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            pose_mat = torch.matmul(T_now, pose_mat)
-            pose_now = pose_mat[:3, :]
-            print(gt_pose)
-            print(pose_now)
+
         if i==0:
             print(rgb.shape, disp.shape)
 
