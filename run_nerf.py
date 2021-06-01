@@ -231,7 +231,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             tar = target_imgs[i]
             img_loss = img2mse(rgb, tar)
             psnr = mse2psnr(img_loss)
-            losses = torch.tensorf(img_loss, requires_grad = True)
+            losses = torch.tensor(img_loss, requires_grad = True)
 
             if 'rgb0' in extras:
                 img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
