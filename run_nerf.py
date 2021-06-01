@@ -202,7 +202,6 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
     #mu = torch.autograd.Variable(mu, requires_grad=True)
 
-    #T_now = torch.eye(4)
     inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
@@ -223,7 +222,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             T_next = torch.matmul(T_now, pose_mat)
-            pose_next = torch.tensor(T_next[:3, :], requires_grad = True)
+            pose_next = torch.tensor(T_next[:3, :])
             print(gt_pose)
             print(pose_next)
 
@@ -249,8 +248,6 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             losses = torch.tensor(losses, requires_grad = True)
             print(w.grad)
             print(mu.grad)
-            #losses.requires_grad = True
-            #pose_next.requires_grad = True
             losses.backward()
             inerf_optimizer.step()
             print(w.grad)
