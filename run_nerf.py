@@ -197,20 +197,23 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     lrate = 1e-6
     #th = torch.tensor(np.pi/6, requires_grad=True)
     w = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
-    w = torch.autograd.Variable(w, requires_grad=True)
+    #w = torch.autograd.Variable(w, requires_grad=True)
 
     mu = torch.normal(0, 0.000001, (3,1), dtype=torch.float32, requires_grad=True)
-    mu = torch.autograd.Variable(mu, requires_grad=True)
+    #mu = torch.autograd.Variable(mu, requires_grad=True)
 
     #T_now = torch.eye(4)
-    inerf_optimizer = torch.optim.Adam(params=[nn.Parameter(w), nn.Parameter(mu)], lr=lrate)
+    inerf_optimizer = torch.optim.Adam(params=[w, mu], lr=lrate)
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
         t = time.time()
         gt_pose = c2w[:3,:4]
-        pose_now = torch.empty_like(gt_pose)
         inerf_optimizer.zero_grad()
         for k in range(epoch):
+            if k == 0 :
+                pose_now = torch.empty_like(gt_pose)
+            else :
+                pose_now = pose_next
             th = torch.norm(w)
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
@@ -220,11 +223,11 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             T_next = torch.matmul(T_now, pose_mat)
-            pose_now = T_next[:3, :]
+            pose_next = T_next[:3, :]
             print(gt_pose)
-            print(pose_now)
+            print(pose_next)
 
-            rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
+            rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_next, **render_kwargs)
             tar = target_imgs[i]
             img_loss = img2mse(rgb, tar)
             psnr = mse2psnr(img_loss)
@@ -235,9 +238,9 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 losses = losses + img_loss0
                 psnr0 = mse2psnr(img_loss0)
 
-            print("inerf : %d : img_loss : %f" % (k, img_loss))
+            print("inerf : %d : img_loss : %f" % (k, losses))
             print("inerf : %d : psnr : %f " % (k, psnr))
-            pose_error = torch.norm(gt_pose - pose_now)
+            pose_error = torch.norm(gt_pose - pose_next)
             print("inerf : %d : pose error : %f " % (k, pose_error))
 
             if  pose_error< 1 :
