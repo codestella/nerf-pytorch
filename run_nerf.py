@@ -223,7 +223,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             T_next = torch.matmul(T_now, pose_mat)
-            pose_next = T_next[:3, :]
+            pose_next = torch.tensor(T_next[:3, :], requires_grad = True)
             print(gt_pose)
             print(pose_next)
 
@@ -250,7 +250,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             print(w.grad)
             print(mu.grad)
             #losses.requires_grad = True
-            pose_next.requires_grad = True
+            #pose_next.requires_grad = True
             pose_next.backward()
             inerf_optimizer.step()
             print(w.grad)
