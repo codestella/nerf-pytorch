@@ -200,8 +200,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
     mu = torch.tensor([[0], [0], [0]], dtype=torch.float32, requires_grad=True)
 
     #T_now = torch.eye(4)
-    inerf_optimizer = torch.optim.Adam(params=[th, w, mu], lr=lrate, betas=(0.9, 0.999))
-
+    inerf_optimizer = torch.optim.Adam(params=[th, w, mu], lr=lrate)
+    loss = torch.zeros(1, dtype=torch.float32)
     for i, c2w in enumerate(tqdm(gt_poses)):
         print(i, time.time() - t)
         t = time.time()
@@ -223,7 +223,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 break
 
             #trans = extras['raw'][..., -1]
-            loss = img_loss
+            loss += img_loss
             loss.requires_grad=True
             #if 'rgb0' in extras:
             #    img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
