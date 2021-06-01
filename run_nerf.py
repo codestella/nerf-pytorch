@@ -211,13 +211,13 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
         inerf_optimizer.zero_grad()
         for k in range(epoch):
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
-            img_loss = nn.MSELoss(rgb, target_imgs[i])
+            img_loss = loss(rgb, target_imgs[i])
             psnr = mse2psnr(img_loss)
-            loss = img_loss
+            losses = img_loss
 
             if 'rgb0' in extras:
                 img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
-                loss = loss + img_loss0
+                losses = losses + img_loss0
                 psnr0 = mse2psnr(img_loss0)
 
             print("inerf : %d : img_loss : %f" % (k, img_loss))
@@ -231,8 +231,8 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 break
             print(w.grad)
             print(mu.grad)
-            loss.requires_grad = True
-            loss.backward()
+            losses.requires_grad = True
+            losses.backward()
             inerf_optimizer.step()
             print(w.grad)
             print(mu.grad)
