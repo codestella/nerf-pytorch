@@ -222,13 +222,13 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 disps.append(disp.cpu().numpy())
                 break
 
-            trans = extras['raw'][..., -1]
+            #trans = extras['raw'][..., -1]
             loss = img_loss
 
-            if 'rgb0' in extras:
-                img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
-                loss = loss + img_loss0
-                psnr0 = mse2psnr(img_loss0)
+            #if 'rgb0' in extras:
+            #    img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
+            #    loss = loss + img_loss0
+            #    psnr0 = mse2psnr(img_loss0)
 
             loss.backward()
             inerf_optimizer.step()
