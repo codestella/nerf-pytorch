@@ -212,6 +212,14 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_now, **render_kwargs)
             img_loss = img2mse(rgb, target_imgs[i])
             psnr = mse2psnr(img_loss)
+            loss = img_loss
+            loss.requires_grad = True
+
+            if 'rgb0' in extras:
+                img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
+                loss = loss + img_loss0
+                psnr0 = mse2psnr(img_loss0)
+                
             print("inerf : %d : img_loss : %f" % (k, img_loss))
             print("inerf : %d : psnr : %f " % (k, psnr))
             pose_error = torch.norm(gt_pose - pose_now)
@@ -221,16 +229,6 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
                 rgbs.append(rgb.cpu().numpy())
                 disps.append(disp.cpu().numpy())
                 break
-            print(extras.keys())
-            trans = extras['raw'][..., -1]
-            loss.requires_grad = True
-            loss = img_loss
-            psnr = mse2psnr(img_loss)
-
-            if 'rgb0' in extras:
-                img_loss0 = img2mse(extras['rgb0'], target_imgs[i])
-                loss = loss + img_loss0
-                psnr0 = mse2psnr(img_loss0)
 
             loss.backward()
             inerf_optimizer.step()
