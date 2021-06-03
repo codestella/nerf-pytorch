@@ -228,7 +228,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
 
             print("----test grad-----")
             torch.tensor(pose_next, requires_grad=True)
-            pose_next.backward()
+            pose_next.mean().backward()
             print(w.grad)
             print(mu.grad)
 
