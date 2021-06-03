@@ -555,9 +555,9 @@ def config_parser():
                         help='learning rate')
     parser.add_argument("--lrate_decay", type=int, default=250, 
                         help='exponential learning rate decay (in 1000 steps)')
-    parser.add_argument("--chunk", type=int, default=1024*32, 
+    parser.add_argument("--chunk", type=int, default= 1024*2, #1024*32,
                         help='number of rays processed in parallel, decrease if running out of memory')
-    parser.add_argument("--netchunk", type=int, default=1024*64, 
+    parser.add_argument("--netchunk", type=int, default=1024*2, #1024*64,
                         help='number of pts sent through network in parallel, decrease if running out of memory')
     parser.add_argument("--no_batching", action='store_true', 
                         help='only take random rays from 1 image at a time')
@@ -757,7 +757,7 @@ def train():
         print('test poses shape', render_poses.shape)
 
         #rgbs, _ = render_path(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
-        rgbs, disps = inerf(render_poses, hwf, 1024*2, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
+        rgbs, disps = inerf(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
         print('Done rendering', testsavedir)
         imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
 
