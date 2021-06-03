@@ -226,6 +226,11 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             print(gt_pose)
             print(pose_next)
 
+            print("----test grad-----")
+            pose_next.backward()
+            print(w.grad)
+            print(mu.grad)
+
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_next, **render_kwargs)
             tar = target_imgs[i]
             img_loss = img2mse(rgb, tar)
