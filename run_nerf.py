@@ -217,13 +217,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
                 (torch.eye(3) * th) - (1 - torch.cos(th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
-            print("----test grad-----")
-            checkmean = torch.tensor(K.mean(), requires_grad=True)
-            checkmean.backward()
-            print(w.grad)
-            print(mu.grad)
-            print("-----------------")
-            
+
             E = torch.exp(w_skew * th)
             trans = torch.hstack((E, K))
             trans_now = torch.vstack((trans, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
@@ -750,24 +744,24 @@ def train():
     # Short circuit if only rendering out from trained model
     if args.render_only:
         print('RENDER ONLY')
-        with torch.no_grad():
-            if args.render_test:
-                # render_test switches to test poses
-                images = images[i_test]
-            else:
-                # Default is smoother render_poses path
-                images = None
+        #with torch.no_grad():
+        if args.render_test:
+            # render_test switches to test poses
+            images = images[i_test]
+        else:
+            # Default is smoother render_poses path
+            images = None
 
-            testsavedir = os.path.join(basedir, expname, 'renderonly_{}_{:06d}'.format('test' if args.render_test else 'path', start))
-            os.makedirs(testsavedir, exist_ok=True)
-            print('test poses shape', render_poses.shape)
+        testsavedir = os.path.join(basedir, expname, 'renderonly_{}_{:06d}'.format('test' if args.render_test else 'path', start))
+        os.makedirs(testsavedir, exist_ok=True)
+        print('test poses shape', render_poses.shape)
 
-            #rgbs, _ = render_path(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
-            rgbs, disps = inerf(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
-            print('Done rendering', testsavedir)
-            imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
+        #rgbs, _ = render_path(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
+        rgbs, disps = inerf(render_poses, hwf, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
+        print('Done rendering', testsavedir)
+        imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
 
-            return
+        return
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
