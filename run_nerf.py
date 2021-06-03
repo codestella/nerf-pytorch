@@ -216,13 +216,13 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             th = torch.norm(w)
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
-                (torch.eye(3) * th) - ((1 - th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
+                (torch.eye(3) * th) - (1 - torch.cos(th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
             E = torch.exp(w_skew * th)
-            T = torch.hstack((E, K))
-            T_now = torch.vstack((T, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
+            trans = torch.hstack((E, K))
+            trans_now = torch.vstack((trans, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
             pose_mat = torch.vstack((pose_now, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
-            T_next = torch.matmul(T_now, pose_mat)
-            pose_next = torch.tensor(T_next[:3, :])
+            pose_mat_next = torch.matmul(trans_now, pose_mat)
+            pose_next = torch.tensor(pose_mat_next[:3, :])
             print(gt_pose)
             print(pose_next)
 
