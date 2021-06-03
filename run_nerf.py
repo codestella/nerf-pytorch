@@ -217,6 +217,13 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             w_skew = torch.tensor([[0, -w[2], w[1]], [w[2], 0, -w[0]], [-w[1], w[0], 0]], dtype=torch.float32)
             K = torch.matmul(
                 (torch.eye(3) * th) - (1 - torch.cos(th) * w_skew) + ((th - torch.sin(th)) * torch.matmul(w_skew, w_skew)), mu)
+            print("----test grad-----")
+            checkmean = torch.tensor(K.mean(), requires_grad=True)
+            checkmean.backward()
+            print(w.grad)
+            print(mu.grad)
+            print("-----------------")
+            
             E = torch.exp(w_skew * th)
             trans = torch.hstack((E, K))
             trans_now = torch.vstack((trans, torch.tensor([0, 0, 0, 1], dtype=torch.float32)))
@@ -226,11 +233,7 @@ def inerf(gt_poses, hwf, chunk, render_kwargs, gt_imgs=None, savedir=None, rende
             print(gt_pose)
             print(pose_next)
 
-            print("----test grad-----")
-            pose_next_new = torch.tensor(pose_next.mean(), requires_grad=True)
-            pose_next_new.backward()
-            print(w.grad)
-            print(mu.grad)
+
 
             rgb, disp, acc, extras = render(H, W, focal, chunk=chunk, c2w=pose_next, **render_kwargs)
             tar = target_imgs[i]
